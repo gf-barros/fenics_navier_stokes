@@ -1,0 +1,6 @@
+*.out
+*.xdmf
+*.h5
+Results/
+.ipynb_checkpoints/
+__pycache__/
