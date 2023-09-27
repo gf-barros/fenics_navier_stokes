@@ -52,7 +52,7 @@ NU2 = Constant(1 / (GR * SC))
 # Time parameters
 T = 0.0
 DT = 0.01
-TOTAL_T = 5.00
+TOTAL_T = 1.00
 
 
 # Domain + Mesh
@@ -91,6 +91,16 @@ else:
 P1 = FiniteElement("Lagrange", mesh.ufl_cell(), 1)
 TH = MixedElement([P1v, P1, P1])
 W = FunctionSpace(mesh, TH)
+dm = W.dofmap()
+
+# print("Nodal coordinates: %s" % str(mesh.coordinates()))
+# print("Vertex dofs: %s" % str(dm.entity_dofs(mesh, 0)))
+# print(type(dm.entity_dofs(mesh, 0)), len(dm.entity_dofs(mesh, 0)))
+# print("Facet dofs: %s" % str(dm.entity_dofs(mesh, 1)))
+# print("Cell dofs: %s" % str(dm.entity_dofs(mesh, 2)))
+# print("All DoFs (Vertex, Facet, and Cell) associated with cell 0: %s" % str(dm.cell_dofs()))
+print("******")
+
 vp = TrialFunction(W)
 (v, p, c) = split(vp)
 (w, q, qc) = TestFunctions(W)
@@ -179,9 +189,6 @@ if ITER_SOLVER_NS is True:
     info(prm, True)  # uncomment if any setup checking is needed
     list_krylov_solver_preconditioners()  # uncomment to verify krylov preconditioners available
 
-xyz = W.sub(2).collapse().tabulate_dof_coordinates()
-np.savetxt("xyz.out", np.around(xyz, 2), delimiter=",")
-
 if OUTPUT_TYPE == "VTK":
     FILE_U = DIR + "velocity.pvd"
     FILE_P = DIR + "pressure.pvd"
@@ -197,6 +204,11 @@ if OUTPUT_TYPE == "VTK":
         out_c << (c_export, t_export)
 
 elif OUTPUT_TYPE == "XDMF":
+    if psize == 1:
+        FILENAME = DIR + "mesh.xdmf"
+        snapshot = XDMFFile(mesh.mpi_comm(), FILENAME)
+        snapshot.write(mesh)
+    
     def export_output(v_export, p_export, c_export, t_export, cont):
         """Exports desired output file"""
         FILE_U = DIR + f"velocity_{cont}.xdmf"
@@ -207,8 +219,8 @@ elif OUTPUT_TYPE == "XDMF":
         out_c = XDMFFile(FILE_C)
 
         out_u.write_checkpoint(v_export, "velocity", t_export)
-        out_p.write_checkpoint(p_export, "velocity", t_export)
-        out_c.write_checkpoint(c_export, "velocity", t_export)
+        out_p.write_checkpoint(p_export, "pressure", t_export)
+        out_c.write_checkpoint(c_export, "concentration", t_export)
 
 
 elif OUTPUT_TYPE == "HDF5":
